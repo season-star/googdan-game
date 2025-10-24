@@ -3,177 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>따라읽는 구구단</title>
-    <link rel="stylesheet" href="style.css">
+    <title>따라읽는 구구단 (2단)</title>
+    
+    <!-- 1. 사운드 라이브러리 (Tone.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    
+    <!-- 2. 유아용 폰트 (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="styles/style.css">
+    <!-- 3. CSS 스타일 (유아용 디자인) -->
     <style>
-        /* 보내주신 CSS 코드입니다. 훌륭합니다! 
-          수정할 필요 없이 그대로 사용하겠습니다.
-        */
+        /* 기본 설정 */
+        :root {
+            --font-family: 'Gaegu', cursive; /* 손글씨 폰트 */
+            --bg-color: #fffbeb; /* 따뜻한 노란색 배경 */
+            --card-bg: #ffffff;
+            --text-color: #44403c;
+            --primary-color: #22c55e; /* Green (Success) */
+            --secondary-color: #3b82f6; /* Blue (Problem) */
+            --danger-color: #ef4444; /* Red (Danger) */
+            --warning-color: #f97316; /* Orange (Read Aloud) */
+            --light-gray: #f1f5f9;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --shadow-press: rgba(0, 0, 0, 0.1);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f4f7f6;
-            /* 7세 아이들을 위해 폰트를 더 크고 둥글게 바꿉니다. */
-            font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+            color: var(--text-color);
+            /* 글씨가 덜 깨져보이게 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        .app-container {
+        /* 게임기 모양의 앱 컨테이너 */
+        .game-container {
             width: 90%;
-            max-width: 360px;
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            max-width: 340px; /* 조금 더 넓게 */
+            background-color: var(--card-bg);
+            border-radius: 24px; /* 더 둥글게 */
+            box-shadow: 0 12px 35px var(--shadow-color);
+            border: 2px solid #ffffff;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        /* 상단 제목 */
+        h1 {
+            font-size: 2rem; /* 폰트가 귀여우니 크게 */
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0 0 1rem 0;
             text-align: center;
         }
 
-        h1 {
-            color: #333;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-
-        .problem-display {
-            background-color: #e0f7fa;
-            border-radius: 15px;
-            padding: 30px 20px;
-            margin-bottom: 25px;
-            font-size: 2.8em;
-            font-weight: bold;
-            color: #00796b;
+        /* 문제 표시 영역 */
+        .display {
+            background-color: #fafafa;
+            border: 2px solid #f4f4f5;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
             min-height: 60px;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-size: 2.75rem; /* 문제 폰트 크게 */
+            font-weight: 700;
+            color: var(--secondary-color);
+            letter-spacing: 2px;
+            transition: all 0.2s ease-in-out;
         }
 
+        #problem-text {
+            color: var(--text-color);
+        }
+        
+        #answer-text {
+            min-width: 60px;
+            display: inline-block;
+        }
+
+        /* 피드백 효과 (부드러운 테두리 강조) */
+        .display.correct {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+        .display.incorrect {
+            border-color: var(--danger-color);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        /* 숫자 키패드 */
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 25px;
+            gap: 1rem; /* 버튼 사이 간격 */
+            margin-bottom: 1rem;
         }
 
+        /* 캔디/블록 같은 버튼 스타일 */
         .keypad button {
-            padding: 18px;
-            font-size: 1.8em;
+            font-family: var(--font-family);
+            font-size: 2rem;
+            font-weight: 700;
+            padding: 1.25rem 0;
             border: none;
-            border-radius: 10px;
-            background-color: #f1f3f5;
-            color: #495057;
+            border-radius: 16px; /* 둥근 버튼 */
+            background-color: var(--light-gray);
+            color: #334155;
             cursor: pointer;
-            transition: background-color 0.2s;
-            /* 아이들이 눌렀을 때 반응을 즉각적으로 알 수 있게 합니다 */
-            transition: transform 0.1s ease;
+            
+            /* 3D 버튼 효과 */
+            border-bottom: 4px solid #d1d5db; 
+            transition: all 0.1s ease-in-out;
         }
 
         .keypad button:active {
-             /* 버튼을 누를 때 살짝 작아지는 효과 */
-            transform: scale(0.95);
+            /* 눌렀을 때 */
+            border-bottom-width: 0;
+            transform: translateY(4px);
+            background-color: #e5e7eb;
         }
 
-        .keypad button:hover {
-            background-color: #e9ecef;
+        /* '지우기' 버튼 스타일 */
+        .keypad .btn-clear {
+            grid-column: 2 / 4;
+            background-color: #fee2e2; /* 핑크 */
+            color: var(--danger-color);
+            border-bottom-color: #fca5a5;
+            font-size: 1.5rem;
+        }
+        .keypad .btn-clear:active {
+            background-color: #fecaca;
+        }
+
+        /* 2단 불러주기 버튼 */
+        .read-aloud-btn {
+            width: 100%;
+            padding: 1.25rem 0;
+            font-family: var(--font-family);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            background-color: var(--warning-color); /* 주황색 */
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            
+            /* 3D 버튼 효과 */
+            border-bottom: 4px solid #fb923c;
+            transition: all 0.1s ease-in-out;
         }
         
-        .keypad .clear-btn {
-            grid-column: 2 / 4; /* '지우기' 버튼을 넓게 만듭니다. */
-            background-color: #ffc9c9;
-            color: #c92a2a;
-            font-size: 1.5em;
+        .read-aloud-btn:active {
+            border-bottom-width: 0;
+            transform: translateY(4px);
+            background-color: #fb923c;
         }
 
-        .action-button {
-            width: 100%;
-            padding: 18px;
-            font-size: 1.3em;
-            font-weight: bold;
-            color: white;
-            background-color: #40c057;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .action-button:hover {
-            background-color: #37b24d;
-        }
-
-        /* --- 여기부터 PRD 기능을 위해 추가된 CSS입니다 --- */
-        /* 정답/오답 시 화면 피드백을 위한 스타일 */
-        .problem-display.correct {
-            background-color: #c3fae8; /* 정답 (초록불) */
-            color: #087f5b;
-            animation: shake 0.5s ease;
-        }
-        .problem-display.wrong {
-            background-color: #ffe3e3; /* 오답 (빨간불) */
-            color: #c92a2a;
-            animation: shake 0.5s ease;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        .read-aloud-btn:disabled {
+            background-color: #d1d5db;
+            border-bottom-color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.7;
         }
 
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- 
-          [수정 1] h1에 id를 추가했습니다.
-          (나중에 "2단" -> "3단"으로 바꾸기 위해)
-        -->
-        <h1 id="dan-title">따라읽는 구구단 (2단)</h1>
+    <!-- 2. HTML 구조 (동일) -->
+    <div class="game-container">
+        <h1>🎵따라읽는 구구단 (2단)</h1>
 
-        <div class="problem-display" id="problem-container">
-            <!-- 
-              [수정 2] span에 id를 추가했습니다.
-              (가장 중요! "2 X 1 = ?" 문제를 바꾸기 위해) 
-            -->
-            <span id="problem-text">2 X 1 = ?</span>
+        <div class="display" id="display-panel">
+            <span id="problem-text">2 X 1 = </span>
+            <span id="answer-text">?</span>
         </div>
 
-        <div class="keypad">
-            <!-- 
-              [수정 3] 숫자 버튼들에 "key"라는 class를 추가했습니다.
-              (어떤 숫자를 눌렀는지 스크립트가 알 수 있도록)
-            -->
-            <button class="key">1</button>
-            <button class="key">2</button>
-            <button class="key">3</button>
-            <button class="key">4</button>
-            <button class="key">5</button>
-            <button class="key">6</button>
-            <button class="key">7</button>
-            <button class="key">8</button>
-            <button class="key">9</button>
-            <button class="key">0</button>
-            <!-- 
-              [수정 4] '지우기' 버튼에 id를 추가했습니다.
-            -->
-            <button class="clear-btn" id="clear-button">지우기</button>
+        <div class="keypad" id="keypad">
+            <button class="num-btn" data-num="1">1</button>
+            <button class="num-btn" data-num="2">2</button>
+            <button class="num-btn" data-num="3">3</button>
+            <button class="num-btn" data-num="4">4</button>
+            <button class="num-btn" data-num="5">5</button>
+            <button class="num-btn" data-num="6">6</button>
+            <button class="num-btn" data-num="7">7</button>
+            <button class="num-btn" data-num="8">8</button>
+            <button class="num-btn" data-num="9">9</button>
+            <button class="num-btn btn-zero" data-num="0">0</button>
+            <button class="btn-clear" id="clear-btn">지우기</button>
         </div>
 
-        <!-- 
-          [수정 5] '불러주기' 버튼에 id를 추가했습니다.
-        -->
-        <button class="action-button" id="speak-button">🎵 2단 불러주기</button>
+        <button class="read-aloud-btn" id="read-btn">
+            2단 불러주기
+        </button>
     </div>
 
-    <!-- 
-      [수정 6] '두뇌' 역할을 할 script.js 파일을 연결합니다.
-      (이 파일은 다음 단계에서 만듭니다)
-    -->
-    <script src="script.js"></script>
+    <!-- 4. JavaScript (사운드 기능 대폭 추가) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. 필요한 HTML 요소 가져오기 ---
+            const problemText = document.getElementById('problem-text');
+            const answerText = document.getElementById('answer-text');
+            const displayPanel = document.getElementById('display-panel');
+            const keypad = document.getElementById('keypad');
+            const clearButton = document.getElementById('clear-btn');
+            const readButton = document.getElementById('read-btn');
+            
+            // --- 2. 사운드 및 TTS 설정 ---
+            const synth = window.speechSynthesis;
+            
+            // "띵동" (정답) 사운드
+            const successSound = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.2 }
+            }).toDestination();
+            
+            let isAudioReady = false; // 사용자가 클릭해야 오디오 시작 가능
+            let koVoice = null; // 한국어 목소리
+            
+            // 브라우저가 목소리를 로드하면 실행
+            synth.onvoiceschanged = () => {
+                const voices = synth.getVoices();
+                // 'Yuna' (Windows)나 'Google 한국의'가 아닌 다른 목소리 우선 탐색
+                koVoice = voices.find(v => v.lang === 'ko-KR' && v.name.includes('Google') === false);
+                koVoice = koVoice || voices.find(v => v.lang === 'ko-KR'); // 없으면 아무 한국어 목소리
+            };
+            // (페이지 로드 시 즉시 한번 더 호출)
+            koVoice = synth.getVoices().find(v => v.lang === 'ko-KR');
+
+            // --- 3. 게임 상태 변수 ---
+            const currentDan = 2;
+            let currentStep = 1;
+            let currentAnswer = 2;
+            let userInput = "";
+            
+            // --- 4. 핵심 함수 ---
+            
+            // 오디오 컨텍스트 시작 (필수)
+            async function startAudio() {
+                if (!isAudioReady) {
+                    await Tone.start();
+                    console.log('Audio Context Started');
+                    isAudioReady = true;
+                }
+            }
+
+            // 음성 재생 헬퍼 함수
+            function speak(text, pitch = 1.4, rate = 1.1, interrupt = true) { // 기본 pitch를 1.3 -> 1.4로 상향
+                startAudio(); // 오디오가 시작 안됐으면 시작
+                if (interrupt) {
+                    synth.cancel(); // 이전 말 끊기
+                }
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.pitch = pitch; // 톤 높게
+                utterance.rate = rate; // 조금 빠르게
+                
+                if (koVoice) {
+                    utterance.voice = koVoice;
+                }
+                
+                synth.speak(utterance);
+            }
+
+            // 새 문제 로드
+            function loadProblem() {
+                userInput = "";
+                currentAnswer = currentDan * currentStep;
+                problemText.textContent = `${currentDan} X ${currentStep} = `;
+                answerText.textContent = "?";
+                answerText.style.color = 'var(--secondary-color)';
+            }
+
+            // 피드백 (시각)
+            function showFeedback(type) {
+                displayPanel.classList.add(type);
+                setTimeout(() => {
+                    displayPanel.classList.remove(type);
+                }, 500);
+            }
+
+            // 정답 확인
+            function checkAnswer() {
+                const userNum = parseInt(userInput, 10);
+
+                if (userNum === currentAnswer) {
+                    // --- 1. 정답일 경우 ---
+                    showFeedback('correct');
+                    successSound.triggerAttackRelease("C5", "8n"); // "띵"
+                    setTimeout(() => successSound.triggerAttackRelease("G5", "8n"), 150); // "동"
+                    
+                    answerText.textContent = currentAnswer;
+                    answerText.style.color = 'var(--primary-color)';
+                    currentStep++;
+
+                    if (currentStep > 9) {
+                        // --- 1-1. 9단까지 모두 맞힌 경우 ---
+                        currentStep = 1;
+                        // "와우!" 축하 메시지 (1.5초 뒤)
+                        setTimeout(() => {
+                            speak("와우! 잘했어! 최고야!", 1.3, 1); // pitch 1.2 -> 1.3
+                        }, 1500);
+                    }
+                    
+                    // 다음 문제 (2초 뒤)
+                    setTimeout(loadProblem, 2000);
+
+                } else if (userInput.length >= String(currentAnswer).length) {
+                    // --- 2. 오답일 경우 ---
+                    showFeedback('incorrect');
+                    speak("한번 더", 1.3, 1); // "다시 한번 해보자" -> "한번 더" (pitch 1.2 -> 1.3)
+                    
+                    answerText.style.color = 'var(--danger-color)';
+                    
+                    // 1.5초 뒤 입력 초기화
+                    setTimeout(() => {
+                        userInput = "";
+                        answerText.textContent = "?";
+                        answerText.style.color = 'var(--secondary-color)';
+                    }, 1500);
+                }
+            }
+            
+            // 2단 불러주기 함수 (큐잉 방식 유지)
+            function readAloud() {
+                startAudio(); // 오디오 시작
+                
+                if (synth.speaking) {
+                    synth.cancel();
+                    readButton.textContent = "2단 불러주기";
+                    readButton.disabled = false;
+                    return;
+                }
+                
+                let utteranceQueue = [];
+                for (let i = 1; i <= 9; i++) {
+                    const text = `이 ${i}은 ${currentDan * i}`;
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ko-KR';
+                    utterance.rate = 1.0; // 불러주기는 보통 속도
+                    utterance.pitch = 1.2; // 톤만 높게
+                    if (koVoice) utterance.voice = koVoice;
+                    
+                    // 큐에 추가
+                    utteranceQueue.push(utterance);
+                }
+                
+                // 마지막 음성이 끝나면 버튼 복구
+                utteranceQueue[utteranceQueue.length - 1].onend = () => {
+                    readButton.textContent = "2단 불러주기";
+                    readButton.disabled = false;
+                };
+
+                readButton.textContent = "🔊 읽는 중... (중지)";
+                readButton.disabled = false; // 중지할 수 있도록 활성화
+                
+                // 큐에 있는 모든 음성 순차적으로 재생
+                utteranceQueue.forEach(u => synth.speak(u));
+            }
+
+
+            // --- 5. 이벤트 리스너 연결 ---
+
+            // 키패드 (이벤트 위임)
+            keypad.addEventListener('click', async (event) => {
+                await startAudio(); // 첫 클릭 시 오디오 활성화
+                
+                if (event.target.classList.contains('num-btn')) {
+                    const num = event.target.dataset.num;
+                    
+                    // 음성으로 숫자 읽어주기
+                    speak(num, 1.5, 1.2); // 톤/속도 더 높게 (유지)
+                    
+                    if (userInput.length >= String(currentAnswer).length) {
+                        return;
+                    }
+                    
+                    userInput += num;
+                    answerText.textContent = userInput;
+                    answerText.style.color = 'var(--text-color)';
+                    
+                    checkAnswer();
+                }
+            });
+
+            // 지우기 버튼
+            clearButton.addEventListener('click', () => {
+                startAudio();
+                userInput = "";
+                answerText.textContent = "?";
+                answerText.style.color = 'var(--secondary-color)';
+            });
+
+            // 2단 불러주기 버튼
+            readButton.addEventListener('click', readAloud);
+
+            // --- 6. 게임 시작 ---
+            loadProblem();
+
+        });
+    </script>
+
 </body>
 </html>
+
