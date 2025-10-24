@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>따라읽는 구구단</title>
+    <link rel="stylesheet" href="style.css">
+
+    **참고:** 만약 `style.css` 파일을 `styles` 같은 별도 폴더 안에 만드셨다면, 경로를 `<link rel="stylesheet" href="styles/style.css">`처럼 수정해야 합니다.
+    이제 `index.html`, `script.js`, `style.css` 세 파일이 모두 준비되었습니다!
+    <style>
+        /* 보내주신 CSS 코드입니다. 훌륭합니다! 
+          수정할 필요 없이 그대로 사용하겠습니다.
+        */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+            /* 7세 아이들을 위해 폰트를 더 크고 둥글게 바꿉니다. */
+            font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+        }
+
+        .app-container {
+            width: 90%;
+            max-width: 360px;
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .problem-display {
+            background-color: #e0f7fa;
+            border-radius: 15px;
+            padding: 30px 20px;
+            margin-bottom: 25px;
+            font-size: 2.8em;
+            font-weight: bold;
+            color: #00796b;
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .keypad button {
+            padding: 18px;
+            font-size: 1.8em;
+            border: none;
+            border-radius: 10px;
+            background-color: #f1f3f5;
+            color: #495057;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            /* 아이들이 눌렀을 때 반응을 즉각적으로 알 수 있게 합니다 */
+            transition: transform 0.1s ease;
+        }
+
+        .keypad button:active {
+             /* 버튼을 누를 때 살짝 작아지는 효과 */
+            transform: scale(0.95);
+        }
+
+        .keypad button:hover {
+            background-color: #e9ecef;
+        }
+        
+        .keypad .clear-btn {
+            grid-column: 2 / 4; /* '지우기' 버튼을 넓게 만듭니다. */
+            background-color: #ffc9c9;
+            color: #c92a2a;
+            font-size: 1.5em;
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: white;
+            background-color: #40c057;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .action-button:hover {
+            background-color: #37b24d;
+        }
+
+        /* --- 여기부터 PRD 기능을 위해 추가된 CSS입니다 --- */
+        /* 정답/오답 시 화면 피드백을 위한 스타일 */
+        .problem-display.correct {
+            background-color: #c3fae8; /* 정답 (초록불) */
+            color: #087f5b;
+            animation: shake 0.5s ease;
+        }
+        .problem-display.wrong {
+            background-color: #ffe3e3; /* 오답 (빨간불) */
+            color: #c92a2a;
+            animation: shake 0.5s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 
+          [수정 1] h1에 id를 추가했습니다.
+          (나중에 "2단" -> "3단"으로 바꾸기 위해)
+        -->
+        <h1 id="dan-title">따라읽는 구구단 (2단)</h1>
+
+        <div class="problem-display" id="problem-container">
+            <!-- 
+              [수정 2] span에 id를 추가했습니다.
+              (가장 중요! "2 X 1 = ?" 문제를 바꾸기 위해) 
+            -->
+            <span id="problem-text">2 X 1 = ?</span>
+        </div>
+
+        <div class="keypad">
+            <!-- 
+              [수정 3] 숫자 버튼들에 "key"라는 class를 추가했습니다.
+              (어떤 숫자를 눌렀는지 스크립트가 알 수 있도록)
+            -->
+            <button class="key">1</button>
+            <button class="key">2</button>
+            <button class="key">3</button>
+            <button class="key">4</button>
+            <button class="key">5</button>
+            <button class="key">6</button>
+            <button class="key">7</button>
+            <button class="key">8</button>
+            <button class="key">9</button>
+            <button class="key">0</button>
+            <!-- 
+              [수정 4] '지우기' 버튼에 id를 추가했습니다.
+            -->
+            <button class="clear-btn" id="clear-button">지우기</button>
+        </div>
+
+        <!-- 
+          [수정 5] '불러주기' 버튼에 id를 추가했습니다.
+        -->
+        <button class="action-button" id="speak-button">🎵 2단 불러주기</button>
+    </div>
+
+    <!-- 
+      [수정 6] '두뇌' 역할을 할 script.js 파일을 연결합니다.
+      (이 파일은 다음 단계에서 만듭니다)
+    -->
+    <script src="script.js"></script>
+</body>
+</html>
