@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>따라읽는 구구단 (2단)</title>
+    <title>따라읽는 구구단</title>
     
     <!-- 1. 사운드 라이브러리 (Tone.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
@@ -47,21 +47,23 @@
         /* 게임기 모양의 앱 컨테이너 */
         .game-container {
             width: 90%;
-            max-width: 340px; /* 조금 더 넓게 */
+            max-width: 340px; 
             background-color: var(--card-bg);
-            border-radius: 24px; /* 더 둥글게 */
+            border-radius: 24px; 
             box-shadow: 0 12px 35px var(--shadow-color);
             border: 2px solid #ffffff;
-            padding: 2rem;
+            padding: 1.5rem; 
             box-sizing: border-box;
+            /* 높이 자동 조절 (스크롤 방지) */
+            height: auto;
         }
 
         /* 상단 제목 */
         h1 {
-            font-size: 2rem; /* 폰트가 귀여우니 크게 */
+            font-size: 1.75rem; 
             font-weight: 700;
             color: var(--text-color);
-            margin: 0 0 1rem 0;
+            margin: 0 0 0.75rem 0; 
             text-align: center;
         }
 
@@ -70,18 +72,19 @@
             background-color: #fafafa;
             border: 2px solid #f4f4f5;
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 1rem; 
             text-align: center;
-            margin-bottom: 1.5rem;
-            min-height: 60px;
+            margin-bottom: 1rem; 
+            min-height: 50px; 
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 2.75rem; /* 문제 폰트 크게 */
+            font-size: 2.25rem; 
             font-weight: 700;
             color: var(--secondary-color);
             letter-spacing: 2px;
             transition: all 0.2s ease-in-out;
+            white-space: nowrap; /* 줄바꿈 방지 */
         }
 
         #problem-text {
@@ -89,7 +92,7 @@
         }
         
         #answer-text {
-            min-width: 60px;
+            min-width: 40px; 
             display: inline-block;
         }
 
@@ -107,16 +110,16 @@
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 1rem; /* 버튼 사이 간격 */
-            margin-bottom: 1rem;
+            gap: 0.75rem; 
+            margin-bottom: 0.75rem; 
         }
 
         /* 캔디/블록 같은 버튼 스타일 */
         .keypad button {
             font-family: var(--font-family);
-            font-size: 2rem;
+            font-size: 1.75rem; 
             font-weight: 700;
-            padding: 1.25rem 0;
+            padding: 1rem 0; 
             border: none;
             border-radius: 16px; /* 둥근 버튼 */
             background-color: var(--light-gray);
@@ -141,7 +144,7 @@
             background-color: #fee2e2; /* 핑크 */
             color: var(--danger-color);
             border-bottom-color: #fca5a5;
-            font-size: 1.5rem;
+            font-size: 1.25rem; 
         }
         .keypad .btn-clear:active {
             background-color: #fecaca;
@@ -150,9 +153,9 @@
         /* 2단 불러주기 버튼 */
         .read-aloud-btn {
             width: 100%;
-            padding: 1.25rem 0;
+            padding: 1rem 0; 
             font-family: var(--font-family);
-            font-size: 1.5rem;
+            font-size: 1.25rem; 
             font-weight: 700;
             color: #ffffff;
             background-color: var(--warning-color); /* 주황색 */
@@ -178,13 +181,31 @@
             opacity: 0.7;
         }
 
+        /* [NEW] 히스토리 로그 */
+        .history-log {
+            font-size: 0.9rem; /* 폰트 약간 작게 */
+            height: 60px; /* 100px -> 60px (모바일 화면 맞춤) */
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-top: 0.75rem; /* 1rem -> 0.75rem */
+            padding: 0.75rem;
+            overflow-y: auto; /* 내용 많아지면 스크롤 */
+            color: #64748b;
+        }
+        .history-log p {
+            margin: 0 0 0.5rem 0;
+            padding: 0;
+            font-weight: 700;
+        }
+
     </style>
 </head>
 <body>
 
     <!-- 2. HTML 구조 (동일) -->
     <div class="game-container">
-        <h1>🎵따라읽는 구구단 (2단)</h1>
+        <h1 id="title">🎵따라읽는 구구단 (2단)</h1>
 
         <div class="display" id="display-panel">
             <span id="problem-text">2 X 1 = </span>
@@ -208,6 +229,11 @@
         <button class="read-aloud-btn" id="read-btn">
             2단 불러주기
         </button>
+
+        <!-- [NEW] 히스토리 로그 창 -->
+        <div class="history-log" id="history-log">
+            <p style="color: #9ca3af; text-align: center; margin-top: 0.5rem;">정답 기록</p>
+        </div>
     </div>
 
     <!-- 4. JavaScript (사운드 기능 대폭 추가) -->
@@ -215,12 +241,14 @@
         document.addEventListener('DOMContentLoaded', () => {
 
             // --- 1. 필요한 HTML 요소 가져오기 ---
+            const title = document.getElementById('title'); // H1 (제목)
             const problemText = document.getElementById('problem-text');
             const answerText = document.getElementById('answer-text');
             const displayPanel = document.getElementById('display-panel');
             const keypad = document.getElementById('keypad');
             const clearButton = document.getElementById('clear-btn');
             const readButton = document.getElementById('read-btn');
+            const historyLog = document.getElementById('history-log'); // 히스토리 로그
             
             // --- 2. 사운드 및 TTS 설정 ---
             const synth = window.speechSynthesis;
@@ -237,21 +265,50 @@
             // 브라우저가 목소리를 로드하면 실행
             synth.onvoiceschanged = () => {
                 const voices = synth.getVoices();
-                // 'Yuna' (Windows)나 'Google 한국의'가 아닌 다른 목소리 우선 탐색
-                koVoice = voices.find(v => v.lang === 'ko-KR' && v.name.includes('Google') === false);
+                // iOS 'Sora', 'Yuna' 등 다른 목소리 우선 탐색
+                koVoice = voices.find(v => v.lang === 'ko-KR' && v.name.includes('Sora'));
+                koVoice = koVoice || voices.find(v => v.lang === 'ko-KR' && v.name.includes('Yuna'));
                 koVoice = koVoice || voices.find(v => v.lang === 'ko-KR'); // 없으면 아무 한국어 목소리
             };
-            // (페이지 로드 시 즉시 한번 더 호출)
-            koVoice = synth.getVoices().find(v => v.lang === 'ko-KR');
-
+            
             // --- 3. 게임 상태 변수 ---
-            const currentDan = 2;
-            let currentStep = 1;
-            let currentAnswer = 2;
-            let userInput = "";
+            let currentDan = 2; // 현재 단
+            let currentStep = 1; // 현재 단계 (1~9)
+            let currentAnswer = 2; // 현재 정답
+            let userInput = ""; // 사용자 입력
             
             // --- 4. 핵심 함수 ---
             
+            // [NEW] 숫자 한국어 읽기 변환 함수
+            function numToKorean(num) {
+                const units = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+                const tens = ['', '십', '이십', '삼십', '사십', '오십', '육십', '칠십', '팔십', '구십'];
+                
+                const numStr = String(num);
+                let result = '';
+
+                if (numStr.length === 1) {
+                    if (num === 0) return '영';
+                    return units[num];
+                }
+
+                if (numStr.length === 2) {
+                    const ten = parseInt(numStr[0], 10);
+                    const unit = parseInt(numStr[1], 10);
+                    
+                    if (ten > 0) {
+                        result += tens[ten];
+                        if (ten === 1) result = '십'; // '일십'이 아니라 '십'
+                    }
+                    if (unit > 0) {
+                        result += units[unit];
+                    }
+                    return result;
+                }
+                
+                return String(num); // 100 이상은 그냥 숫자로 (구구단에선 81이 최대)
+            }
+
             // 오디오 컨텍스트 시작 (필수)
             async function startAudio() {
                 if (!isAudioReady) {
@@ -262,7 +319,7 @@
             }
 
             // 음성 재생 헬퍼 함수
-            function speak(text, pitch = 1.4, rate = 1.1, interrupt = true) { // 기본 pitch를 1.3 -> 1.4로 상향
+            function speak(text, pitch = 1.4, rate = 1.1, interrupt = true) { 
                 startAudio(); // 오디오가 시작 안됐으면 시작
                 if (interrupt) {
                     synth.cancel(); // 이전 말 끊기
@@ -281,16 +338,19 @@
 
             // 새 문제 로드
             function loadProblem() {
-                userInput = "";
-                currentAnswer = currentDan * currentStep;
-                problemText.textContent = `${currentDan} X ${currentStep} = `;
-                answerText.textContent = "?";
+                userInput = ""; // 사용자 입력 초기화
+                currentAnswer = currentDan * currentStep; // 현재 정답 계산
+                
+                problemText.textContent = `${currentDan} X ${currentStep} = `; // 문제 텍스트 업데이트
+                answerText.textContent = "?"; // 답변 텍스트 ?로 초기화
                 answerText.style.color = 'var(--secondary-color)';
             }
 
-            // 피드백 (시각)
+            // 정답/오답 피드백 함수
             function showFeedback(type) {
-                displayPanel.classList.add(type);
+                displayPanel.classList.add(type); // 'correct' 또는 'incorrect' 클래스 추가
+                
+                // 0.5초 후에 클래스 제거해서 깜빡임 효과
                 setTimeout(() => {
                     displayPanel.classList.remove(type);
                 }, 500);
@@ -298,6 +358,13 @@
 
             // 정답 확인
             function checkAnswer() {
+                // 이 함수는 userInput이 변경될 때마다 호출됨
+                
+                // 입력이 없으면 체크 안함
+                if (userInput === "") {
+                    return;
+                }
+                
                 const userNum = parseInt(userInput, 10);
 
                 if (userNum === currentAnswer) {
@@ -306,30 +373,59 @@
                     successSound.triggerAttackRelease("C5", "8n"); // "띵"
                     setTimeout(() => successSound.triggerAttackRelease("G5", "8n"), 150); // "동"
                     
+                    // [NEW] 히스토리 로그 추가
+                    const logEntry = document.createElement('p');
+                    logEntry.textContent = `✅ ${currentDan} X ${currentStep} = ${currentAnswer}`;
+                    // "정답 기록" 텍스트가 있으면 지우기
+                    if (historyLog.children.length === 1 && historyLog.children[0].textContent.includes('정답 기록')) {
+                        historyLog.innerHTML = '';
+                    }
+                    historyLog.appendChild(logEntry);
+                    historyLog.scrollTop = historyLog.scrollHeight; // Auto-scroll to bottom
+
                     answerText.textContent = currentAnswer;
                     answerText.style.color = 'var(--primary-color)';
-                    currentStep++;
+                    currentStep++; // 다음 단계로
 
                     if (currentStep > 9) {
                         // --- 1-1. 9단까지 모두 맞힌 경우 ---
                         currentStep = 1;
-                        // "와우!" 축하 메시지 (1.5초 뒤)
+                        
+                        // "와우!" 축하 메시지 (즉시)
+                        speak("와우! 잘했어! 최고야!", 1.3, 1);
+                        
+                        // 2.5초 뒤 다음 단으로 넘어감
                         setTimeout(() => {
-                            speak("와우! 잘했어! 최고야!", 1.3, 1); // pitch 1.2 -> 1.3
-                        }, 1500);
-                    }
-                    
-                    // 다음 문제 (2초 뒤)
-                    setTimeout(loadProblem, 2000);
+                            currentDan++; // 다음 단으로
+                            if (currentDan > 9) {
+                                currentDan = 2; // 9단 끝나면 2단으로
+                                historyLog.innerHTML = '<p style="color: #9ca3af; text-align: center; margin-top: 0.5rem;">정답 기록</p>'; // 히스토리 초기화
+                                speak("모두 완료! 2단부터 다시 시작!", 1.3, 1);
+                            } else {
+                                speak(`${currentDan}단 시작!`, 1.3, 1);
+                            }
+                            
+                            // UI 업데이트
+                            title.textContent = `🎵따라읽는 구구단 (${currentDan}단)`;
+                            readButton.textContent = `${currentDan}단 불러주기`;
+                            loadProblem(); // 새 문제 로드
+                            
+                        }, 2500); // 축하 메시지 후 딜레이
 
-                } else if (userInput.length >= String(currentAnswer).length) {
-                    // --- 2. 오답일 경우 ---
+                    } else {
+                        // --- 1-2. 다음 문제 (9단 미만) ---
+                        // 다음 문제 (2초 뒤)
+                        setTimeout(loadProblem, 2000);
+                    }
+
+                } else if (userInput.length >= String(currentAnswer).length && userInput.length > 0) {
+                    // --- 2. 오답일 경우 (정답 자리수만큼 찼는데 다를 때) ---
                     showFeedback('incorrect');
-                    speak("한번 더", 1.3, 1); // "다시 한번 해보자" -> "한번 더" (pitch 1.2 -> 1.3)
+                    speak("한번 더", 1.3, 1); 
                     
                     answerText.style.color = 'var(--danger-color)';
                     
-                    // 1.5초 뒤 입력 초기화
+                    // 1초 후에 입력 초기화
                     setTimeout(() => {
                         userInput = "";
                         answerText.textContent = "?";
@@ -344,16 +440,25 @@
                 
                 if (synth.speaking) {
                     synth.cancel();
-                    readButton.textContent = "2단 불러주기";
+                    readButton.textContent = `${currentDan}단 불러주기`;
                     readButton.disabled = false;
                     return;
                 }
-                
+
+                // 음성 대기열 생성
                 let utteranceQueue = [];
+                const danKorean = numToKorean(currentDan); // [NEW] 예: "이"
+
                 for (let i = 1; i <= 9; i++) {
-                    const text = `이 ${i}은 ${currentDan * i}`;
+                    // [MODIFIED] TTS가 숫자를 정확히 읽도록 수정
+                    const resultNum = currentDan * i;
+                    const resultKorean = numToKorean(resultNum); // 예: "십팔"
+                    const iKorean = numToKorean(i); // 예: "구"
+                    
+                    const text = `${danKorean} ${iKorean}은 ${resultKorean}`; // 예: "이 구는 십팔"
+                    
                     const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'ko-KR';
+                    utterance.lang = 'ko-KR'; // 한국어 설정
                     utterance.rate = 1.0; // 불러주기는 보통 속도
                     utterance.pitch = 1.2; // 톤만 높게
                     if (koVoice) utterance.voice = koVoice;
@@ -364,12 +469,13 @@
                 
                 // 마지막 음성이 끝나면 버튼 복구
                 utteranceQueue[utteranceQueue.length - 1].onend = () => {
-                    readButton.textContent = "2단 불러주기";
+                    readButton.textContent = `${currentDan}단 불러주기`;
                     readButton.disabled = false;
                 };
 
+                // 버튼 비활성화 및 텍스트 변경
                 readButton.textContent = "🔊 읽는 중... (중지)";
-                readButton.disabled = false; // 중지할 수 있도록 활성화
+                readButton.disabled = false; // 중지할 수 있도록 즉시 활성화
                 
                 // 큐에 있는 모든 음성 순차적으로 재생
                 utteranceQueue.forEach(u => synth.speak(u));
@@ -378,25 +484,32 @@
 
             // --- 5. 이벤트 리스너 연결 ---
 
-            // 키패드 (이벤트 위임)
+            // 키패드 (이벤트 위임 사용)
             keypad.addEventListener('click', async (event) => {
                 await startAudio(); // 첫 클릭 시 오디오 활성화
                 
+                // 숫자 버튼(.num-btn)이 아니면 무시
                 if (event.target.classList.contains('num-btn')) {
                     const num = event.target.dataset.num;
                     
-                    // 음성으로 숫자 읽어주기
-                    speak(num, 1.5, 1.2); // 톤/속도 더 높게 (유지)
-                    
-                    if (userInput.length >= String(currentAnswer).length) {
-                        return;
+                    // [MODIFIED] 입력 길이 제한 (최대 2자리)
+                    if (userInput.length >= 2) {
+                        return; // 2자리 찼으면 더 입력 안됨
                     }
                     
                     userInput += num;
+                    
+                    // [MODIFIED] 합쳐진 숫자를 한글로 읽기
+                    const userNumKorean = numToKorean(parseInt(userInput, 10));
+                    speak(userNumKorean, 1.5, 1.2); 
+                    
                     answerText.textContent = userInput;
                     answerText.style.color = 'var(--text-color)';
                     
-                    checkAnswer();
+                    // 정답 체크 (정답 자리수와 같아졌을 때만 체크)
+                    if (userInput.length >= String(currentAnswer).length) {
+                        checkAnswer();
+                    }
                 }
             });
 
